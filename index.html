@@ -399,7 +399,11 @@ textarea{min-height:68px;}
 // ── 상태 ────────────────────────────────────────
 let NOTION_API_KEY = '';
 let NOTION_DB_ID   = '';
-const PROXY        = 'https://corsproxy.io/?';
+const PROXIES = [
+  'https://corsproxy.io/?',
+  'https://api.allorigins.win/raw?url=',
+  'https://thingproxy.freeboard.io/fetch/'
+];
 
 let currentUser = 0;
 let names = JSON.parse(localStorage.getItem('scrapNames') || '{"1":"멤버 1","2":"멤버 2"}');
@@ -473,7 +477,7 @@ function resetSetup() {
 
 // ── 노션 API ─────────────────────────────────────
 async function notionFetch(method, path, body) {
-  const url  = PROXY + encodeURIComponent('https://api.notion.com/v1' + path);
+  const notionUrl = 'https://api.notion.com/v1' + path;
   const opts = {
     method,
     headers: {
@@ -483,7 +487,29 @@ async function notionFetch(method, path, body) {
     }
   };
   if (body) opts.body = JSON.stringify(body);
-  return fetch(url, opts);
+
+  // 프록시 3개를 순서대로 시도
+  let lastErr;
+  for (const proxy of PROXIES) {
+    try {
+      const res = await fetch(proxy + encodeURIComponent(notionUrl), opts);
+      // allorigins는 항상 200을 반환하므로 본문 파싱 필요
+      if (proxy.includes('allorigins')) {
+        const text = await res.text();
+        const parsed = JSON.parse(text);
+        // 노션 에러 응답이면 status 설정
+        return new Response(JSON.stringify(parsed), {
+          status: parsed.status || 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      return res;
+    } catch(e) {
+      lastErr = e;
+      // 다음 프록시 시도
+    }
+  }
+  throw lastErr;
 }
 
 async function checkNotionConnection() {
