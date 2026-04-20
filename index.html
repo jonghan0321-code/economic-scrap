@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>경제신문 스크랩 ♥</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --pink-50: #FFF0F5;
+  --pink-100: #FCE4EC;
+  --pink-200: #F8BBD9;
+  --pink-300: #F48FB1;
+  --pink-400: #F06292;
+  --pink-500: #EC407A;
+  --pink-600: #E91E8C;
+  --pink-700: #C2185B;
+  --pink-800: #880E4F;
+  --cream: #FFFAFC;
+  --white: #FFFFFF;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Nunito',sans-serif;background:#FFF5F8;min-height:100vh;}
+body::before{
+  content:'';position:fixed;top:0;left:0;right:0;bottom:0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(244,143,177,0.12) 0%, transparent 40%),
+    radial-gradient(circle at 85% 75%, rgba(240,98,146,0.10) 0%, transparent 40%);
+  pointer-events:none;z-index:0;
+}
+.page{position:relative;z-index:1;max-width:780px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+
+/* ── SETUP OVERLAY ─────────────────────────────── */
+.setup-overlay{
+  position:fixed;inset:0;background:rgba(255,240,245,0.97);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;padding:1.5rem;
+}
+.setup-box{
+  background:var(--white);border:2px solid var(--pink-200);
+  border-radius:24px;padding:2rem 2rem 1.75rem;
+  max-width:460px;width:100%;text-align:center;
+}
+.setup-bow{margin-bottom:12px;}
+.setup-title{font-size:20px;font-weight:800;color:var(--pink-700);margin-bottom:6px;}
+.setup-sub{font-size:13px;color:var(--pink-400);margin-bottom:1.5rem;line-height:1.7;}
+.setup-field{text-align:left;margin-bottom:12px;}
+.setup-field label{display:block;font-size:11px;font-weight:800;color:var(--pink-700);letter-spacing:0.7px;text-transform:uppercase;margin-bottom:5px;}
+.setup-field input{
+  width:100%;font-family:'Nunito',sans-serif;font-size:13px;
+  padding:10px 14px;border:1.5px solid var(--pink-200);border-radius:10px;
+  background:#FFFAFC;color:#333;outline:none;
+  transition:border-color 0.15s;
+}
+.setup-field input:focus{border-color:var(--pink-500);background:#fff;}
+.setup-hint{font-size:11px;color:var(--pink-300);margin-top:4px;line-height:1.6;}
+.setup-btn{
+  width:100%;margin-top:1.25rem;padding:13px;
+  background:var(--pink-500);color:#fff;border:none;border-radius:40px;
+  font-size:15px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;
+  box-shadow:0 4px 14px rgba(236,64,122,0.3);transition:all 0.15s;
+}
+.setup-btn:hover{background:var(--pink-700);}
+.setup-btn:active{transform:scale(0.98);}
+.setup-warn{
+  margin-top:14px;background:#FFF8E1;border:1px solid #FFE082;
+  border-radius:10px;padding:10px 14px;font-size:12px;color:#795548;
+  line-height:1.7;text-align:left;
+}
+.setup-warn strong{color:#E65100;}
+
+/* ── HEADER ────────────────────────────────────── */
+.site-header{text-align:center;padding:2rem 1rem 1.5rem;margin-bottom:1.5rem;}
+.header-title{font-size:26px;font-weight:800;color:var(--pink-700);letter-spacing:0.5px;}
+.header-sub{font-size:13px;color:var(--pink-400);margin-top:4px;}
+.heart-row{display:flex;justify-content:center;gap:5px;margin-top:10px;}
+.hdot{width:7px;height:7px;border-radius:50%;}
+
+/* ── NOTION STATUS ──────────────────────────────── */
+.notion-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--white);border:2px solid var(--pink-200);
+  border-radius:14px;padding:10px 16px;margin-bottom:1.25rem;
+  gap:10px;flex-wrap:wrap;
+}
+.notion-status{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.status-dot.ok{background:#4CAF50;}
+.status-dot.err{background:#F44336;}
+.status-dot.idle{background:#FFC107;}
+.notion-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.small-btn{
+  padding:7px 14px;background:var(--pink-50);color:var(--pink-700);
+  border:1.5px solid var(--pink-200);border-radius:20px;
+  font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;
+  display:flex;align-items:center;gap:5px;transition:background 0.15s;
+}
+.small-btn:hover{background:var(--pink-100);}
+
+/* ── USER SELECT ────────────────────────────────── */
+.user-select-wrap{
+  background:var(--white);border:2px solid var(--pink-200);
+  border-radius:20px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;text-align:center;
+}
+.user-select-label{font-size:12px;font-weight:700;color:var(--pink-600);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:10px;}
+.user-btn-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:10px;}
+.user-btn{
+  padding:10px 28px;border-radius:40px;font-family:'Nunito',sans-serif;
+  font-size:14px;font-weight:700;cursor:pointer;
+  border:2px solid var(--pink-300);background:var(--pink-50);color:var(--pink-700);
+  transition:all 0.2s;position:relative;
+}
+.user-btn:hover{background:var(--pink-100);border-color:var(--pink-400);}
+.user-btn.active{background:var(--pink-500);color:#fff;border-color:var(--pink-500);box-shadow:0 4px 14px rgba(236,64,122,0.3);}
+.user-btn .u-count{
+  position:absolute;top:-6px;right:-6px;
+  background:var(--pink-700);color:#fff;font-size:10px;font-weight:800;
+  border-radius:20px;padding:1px 6px;min-width:18px;text-align:center;
+}
+.name-row{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;}
+
+/* ── TABS ───────────────────────────────────────── */
+.tab-bar{display:flex;border-bottom:2px solid var(--pink-200);margin-bottom:1.25rem;}
+.tab{padding:9px 18px;font-size:13px;font-weight:700;color:var(--pink-300);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color 0.15s;}
+.tab:hover{color:var(--pink-500);}
+.tab.active{color:var(--pink-600);border-bottom-color:var(--pink-500);}
+
+/* ── FORM ───────────────────────────────────────── */
+.card{background:var(--white);border:1.5px solid var(--pink-200);border-radius:16px;padding:1.1rem 1.25rem;margin-bottom:10px;transition:border-color 0.2s;}
+.card:focus-within{border-color:var(--pink-400);}
+.field-label{font-size:11px;font-weight:800;color:var(--pink-700);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.pill{font-size:10px;background:var(--pink-50);color:var(--pink-700);border:1px solid var(--pink-200);border-radius:20px;padding:2px 8px;font-weight:600;text-transform:none;letter-spacing:0;}
+.req{color:var(--pink-500);font-size:14px;}
+input[type=text],input[type=url],input[type=date],input[type=password],textarea{
+  width:100%;font-family:'Nunito',sans-serif;font-size:13px;
+  padding:9px 12px;border:1.5px solid var(--pink-200);border-radius:10px;
+  background:#FFFAFC;color:#333;resize:vertical;
+  transition:border-color 0.15s,background 0.15s;outline:none;line-height:1.6;
+}
+input:focus,textarea:focus{border-color:var(--pink-500);background:#fff;}
+textarea{min-height:68px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:520px){.two-col{grid-template-columns:1fr;}}
+
+.btn-row{display:flex;gap:8px;justify-content:center;margin-top:1.25rem;flex-wrap:wrap;}
+.btn-save{
+  padding:11px 32px;background:var(--pink-500);color:#fff;border:none;border-radius:40px;
+  font-size:14px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;
+  transition:all 0.15s;box-shadow:0 4px 14px rgba(236,64,122,0.25);
+  display:flex;align-items:center;gap:8px;
+}
+.btn-save:hover{background:var(--pink-700);}
+.btn-save:active{transform:scale(0.97);}
+.btn-save:disabled{background:var(--pink-300);cursor:not-allowed;box-shadow:none;}
+.btn-sec{padding:11px 22px;background:var(--pink-50);color:var(--pink-700);border:2px solid var(--pink-200);border-radius:40px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.15s;}
+.btn-sec:hover{background:var(--pink-100);}
+.btn-ghost{padding:11px 18px;background:transparent;color:var(--pink-300);border:1.5px solid var(--pink-200);border-radius:40px;font-size:13px;cursor:pointer;font-family:'Nunito',sans-serif;}
+.btn-ghost:hover{background:var(--pink-50);}
+
+/* ── SPINNER ────────────────────────────────────── */
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:none;}
+.spinner.show{display:block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── TOAST ──────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:28px;left:50%;
+  transform:translateX(-50%) translateY(80px);
+  color:#fff;padding:10px 22px;border-radius:40px;
+  font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;
+  opacity:0;transition:all 0.3s;pointer-events:none;z-index:9999;
+}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+/* ── LIST ───────────────────────────────────────── */
+.list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.list-title{font-size:14px;font-weight:800;color:var(--pink-700);display:flex;align-items:center;gap:7px;}
+.count-badge{background:var(--pink-500);color:#fff;font-size:11px;font-weight:800;border-radius:20px;padding:2px 10px;}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--pink-300);font-size:14px;line-height:2;}
+.scrap-item{background:var(--white);border:1.5px solid var(--pink-200);border-radius:16px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all 0.2s;}
+.scrap-item:hover{border-color:var(--pink-400);background:var(--pink-50);}
+.scrap-item.expanded{border-color:var(--pink-500);background:var(--cream);}
+.item-top{display:flex;align-items:flex-start;gap:8px;}
+.item-no{font-size:10px;font-weight:800;color:#fff;background:var(--pink-500);border-radius:20px;padding:2px 9px;white-space:nowrap;flex-shrink:0;margin-top:1px;}
+.item-headline{font-size:14px;font-weight:700;color:var(--pink-800);flex:1;line-height:1.4;}
+.item-actions{display:flex;gap:4px;flex-shrink:0;}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--pink-200);font-size:13px;padding:2px 5px;border-radius:6px;transition:color 0.15s;}
+.del-btn:hover{color:var(--pink-500);background:var(--pink-100);}
+.expand-btn{background:none;border:none;cursor:pointer;color:var(--pink-300);font-size:16px;padding:2px 5px;transition:transform 0.2s;}
+.scrap-item.expanded .expand-btn{transform:rotate(180deg);}
+.item-meta{font-size:11px;color:var(--pink-400);margin-top:5px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.item-user-tag{font-size:10px;font-weight:800;border-radius:20px;padding:2px 8px;}
+.notion-synced{font-size:10px;font-weight:700;border-radius:20px;padding:2px 8px;background:#E8F5E9;color:#2E7D32;}
+.notion-unsynced{font-size:10px;color:#bbb;}
+.item-detail{margin-top:12px;border-top:1px dashed var(--pink-200);padding-top:12px;display:none;flex-direction:column;gap:8px;}
+.scrap-item.expanded .item-detail{display:flex;}
+.detail-row{display:flex;gap:7px;align-items:flex-start;}
+.detail-tag{font-size:10px;font-weight:800;color:var(--pink-700);background:var(--pink-50);border:1px solid var(--pink-200);border-radius:6px;padding:2px 7px;white-space:nowrap;flex-shrink:0;margin-top:1px;}
+.detail-val{font-size:12px;color:#555;line-height:1.6;word-break:break-word;}
+.detail-val a{color:var(--pink-500);text-decoration:none;word-break:break-all;}
+.detail-val a:hover{text-decoration:underline;}
+.shared-bar{background:var(--pink-100);border:1.5px solid var(--pink-200);border-radius:12px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:var(--pink-700);font-weight:700;text-align:center;}
+.export-bar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:8px;}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     SETUP OVERLAY — API 키를 파일에 저장하지 않고
+     브라우저 localStorage에만 보관합니다
+═══════════════════════════════════════════════ -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-box">
+    <div class="setup-bow">
+      <svg width="52" height="36" viewBox="0 0 52 36" fill="none">
+        <ellipse cx="13" cy="18" rx="13" ry="9" fill="#F48FB1" stroke="#EC407A" stroke-width="1.5"/>
+        <ellipse cx="39" cy="18" rx="13" ry="9" fill="#F48FB1" stroke="#EC407A" stroke-width="1.5"/>
+        <ellipse cx="26" cy="18" rx="5.5" ry="5.5" fill="#EC407A"/>
+        <ellipse cx="26" cy="18" rx="3" ry="3" fill="#F8BBD9"/>
+      </svg>
+    </div>
+    <div class="setup-title">처음 설정하기 ♥</div>
+    <div class="setup-sub">노션 API 키와 데이터베이스 ID를 입력해주세요.<br>이 정보는 <strong>내 브라우저에만</strong> 저장되고<br>GitHub에는 절대 올라가지 않아요!</div>
+
+    <div class="setup-field">
+      <label>노션 API 키</label>
+      <input type="password" id="setupApiKey" placeholder="ntn_xxxxxxxxxxxxxxxxxxxx" autocomplete="off"/>
+      <div class="setup-hint">notion.so/my-integrations → 내 Integration → Secret 복사</div>
+    </div>
+    <div class="setup-field">
+      <label>노션 데이터베이스 ID</label>
+      <input type="text" id="setupDbId" placeholder="32자리 영문+숫자" autocomplete="off"/>
+      <div class="setup-hint">노션 DB 페이지 URL에서 ?v= 앞 32자리</div>
+    </div>
+
+    <button class="setup-btn" onclick="completeSetup()">설정 완료 + 연결 확인 ♥</button>
+
+    <div class="setup-warn">
+      <strong>보안 안내:</strong> API 키는 이 기기의 브라우저에만 저장돼요.<br>
+      공용 PC에서는 사용 후 아래 "설정 초기화" 버튼으로 삭제하세요.<br>
+      노션 Integration에서 언제든지 키를 재발급할 수 있어요.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════════════ -->
+<div class="page">
+
+  <header class="site-header">
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px;">
+      <svg width="52" height="36" viewBox="0 0 52 36" fill="none">
+        <ellipse cx="13" cy="18" rx="13" ry="9" fill="#F48FB1" stroke="#EC407A" stroke-width="1.5"/>
+        <ellipse cx="39" cy="18" rx="13" ry="9" fill="#F48FB1" stroke="#EC407A" stroke-width="1.5"/>
+        <ellipse cx="26" cy="18" rx="5.5" ry="5.5" fill="#EC407A"/>
+        <ellipse cx="26" cy="18" rx="3" ry="3" fill="#F8BBD9"/>
+      </svg>
+    </div>
+    <div class="header-title">경제신문 스크랩</div>
+    <div class="header-sub">함께 읽고 함께 성장해요 ♥ · 노션 자동 연동</div>
+    <div class="heart-row">
+      <div class="hdot" style="background:#F8BBD9;"></div>
+      <div class="hdot" style="background:#F48FB1;"></div>
+      <div class="hdot" style="background:#EC407A;"></div>
+      <div class="hdot" style="background:#F48FB1;"></div>
+      <div class="hdot" style="background:#F8BBD9;"></div>
+    </div>
+  </header>
+
+  <!-- NOTION STATUS BAR -->
+  <div class="notion-bar">
+    <div class="notion-status">
+      <div class="status-dot idle" id="statusDot"></div>
+      <span id="statusText">노션 연결 확인 중...</span>
+    </div>
+    <div class="notion-right">
+      <span style="font-size:11px;color:var(--pink-400);" id="syncCount"></span>
+      <button class="small-btn" onclick="loadFromNotion()">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v2M6 9v2M1 6h2M9 6h2" stroke="#C2185B" stroke-width="1.4" stroke-linecap="round"/></svg>
+        노션에서 불러오기
+      </button>
+      <button class="small-btn" onclick="resetSetup()" style="color:#F44336;border-color:#FFCDD2;">설정 초기화</button>
+    </div>
+  </div>
+
+  <!-- USER SELECT -->
+  <div class="user-select-wrap">
+    <div class="user-select-label">✦ 나는 누구인가요? ✦</div>
+    <div class="user-btn-row">
+      <button class="user-btn" id="userBtn1" onclick="setUser(1)">
+        <span id="u1name">멤버 1</span>
+        <span class="u-count" id="u1count">0</span>
+      </button>
+      <button class="user-btn" id="userBtn2" onclick="setUser(2)">
+        <span id="u2name">멤버 2</span>
+        <span class="u-count" id="u2count">0</span>
+      </button>
+    </div>
+    <div class="name-row">
+      <input type="text" id="nameInput1" placeholder="멤버 1 이름" style="width:130px;font-size:12px;padding:6px 10px;border-radius:20px;text-align:center;"/>
+      <input type="text" id="nameInput2" placeholder="멤버 2 이름" style="width:130px;font-size:12px;padding:6px 10px;border-radius:20px;text-align:center;"/>
+      <button onclick="saveNames()" style="padding:7px 16px;background:var(--pink-100);border:1.5px solid var(--pink-300);border-radius:20px;font-size:12px;font-weight:700;color:var(--pink-700);cursor:pointer;font-family:'Nunito',sans-serif;">저장</button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <div class="tab active" id="tab-write" onclick="switchTab('write')">✏️ 스크랩 작성</div>
+    <div class="tab" id="tab-mine" onclick="switchTab('mine')">📌 내 스크랩</div>
+    <div class="tab" id="tab-all" onclick="switchTab('all')">👀 전체 보기</div>
+  </div>
+
+  <!-- ── WRITE TAB ── -->
+  <div id="section-write">
+    <div id="writeNotice" style="background:var(--pink-100);border:1.5px solid var(--pink-200);border-radius:12px;padding:10px 14px;margin-bottom:1rem;font-size:13px;color:var(--pink-700);font-weight:700;text-align:center;">
+      먼저 위에서 나의 이름을 선택해주세요 ♥
+    </div>
+    <div class="card">
+      <div class="two-col">
+        <div>
+          <div class="field-label">신문기사 날짜 <span class="req">♥</span></div>
+          <input type="date" id="articleDate"/>
+        </div>
+        <div>
+          <div class="field-label">헤드라인 <span class="req">♥</span> <span class="pill">요약&amp;압축 5분</span></div>
+          <input type="text" id="headline" placeholder="기사 제목을 요약해서 입력"/>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="field-label">기사 링크</div>
+      <input type="url" id="articleLink" placeholder="https://..."/>
+    </div>
+    <div class="card">
+      <div class="field-label">본문 <span class="pill">기사 선정 &amp; 복사 3분</span></div>
+      <textarea id="body" placeholder="본문 내용을 복사해서 붙여넣기하세요"></textarea>
+    </div>
+    <div class="card">
+      <div class="field-label">수치화 &amp; 인사이트 <span class="pill">5분</span></div>
+      <textarea id="insight" placeholder="기사 내용 중 수치화할 수 있는 것과 나만의 인사이트를 적어요"></textarea>
+    </div>
+    <div class="card">
+      <div class="field-label">추가 조사 내용 / 결과</div>
+      <textarea id="research" placeholder="기사의 근거를 통해 바뀐 수치는 무엇인가요?"></textarea>
+    </div>
+    <div class="card">
+      <div class="field-label">요약 &amp; 의견 <span class="pill">스터디용</span></div>
+      <textarea id="opinion" placeholder="경제신문 스크랩 스터디에서 나눌 요약과 의견을 적어요"></textarea>
+    </div>
+    <div class="card">
+      <div class="two-col">
+        <div>
+          <div class="field-label">적용할 점</div>
+          <textarea id="apply" placeholder="현직자에게 할 질문" style="min-height:56px;"></textarea>
+        </div>
+        <div>
+          <div class="field-label">연관 기사 링크</div>
+          <textarea id="related" placeholder="관련 기사 URL (줄바꿈으로 여러 개)" style="min-height:56px;"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-ghost" onclick="clearForm()">초기화</button>
+      <button class="btn-sec" onclick="saveLocal()">로컬만 저장</button>
+      <button class="btn-save" id="saveBtn" onclick="saveScrap()">
+        <span id="saveBtnText">저장 + 노션 전송 ♥</span>
+        <div class="spinner" id="saveSpinner"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── MINE TAB ── -->
+  <div id="section-mine" style="display:none;">
+    <div class="export-bar">
+      <button class="btn-sec" onclick="syncUnsyncedToNotion()">미동기 노션 전송</button>
+      <button class="btn-sec" onclick="exportCSV('mine')">CSV 내보내기</button>
+    </div>
+    <div id="mineListHeader"></div>
+    <div id="mineList"></div>
+  </div>
+
+  <!-- ── ALL TAB ── -->
+  <div id="section-all" style="display:none;">
+    <div class="shared-bar" id="sharedBar">두 멤버의 스크랩을 한눈에 볼 수 있어요 ♥</div>
+    <div class="export-bar">
+      <button class="btn-sec" onclick="syncUnsyncedToNotion()">미동기 노션 전송</button>
+      <button class="btn-sec" onclick="exportCSV('all')">전체 CSV 내보내기</button>
+    </div>
+    <div id="allList"></div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 상태 ────────────────────────────────────────
+let NOTION_API_KEY = '';
+let NOTION_DB_ID   = '';
+const PROXY        = 'https://corsproxy.io/?';
+
+let currentUser = 0;
+let names = JSON.parse(localStorage.getItem('scrapNames') || '{"1":"멤버 1","2":"멤버 2"}');
+let data  = JSON.parse(localStorage.getItem('scrapData4') || '[]');
+
+// ── 초기화 ──────────────────────────────────────
+function init() {
+  const savedKey = localStorage.getItem('notionApiKey');
+  const savedDb  = localStorage.getItem('notionDbId');
+
+  if (savedKey && savedDb) {
+    NOTION_API_KEY = savedKey;
+    NOTION_DB_ID   = savedDb;
+    document.getElementById('setupOverlay').style.display = 'none';
+    checkNotionConnection();
+  } else {
+    // 미설정 상태 — overlay 표시
+    setStatus('idle', 'API 키를 입력해주세요');
+  }
+
+  document.getElementById('nameInput1').value = names['1'];
+  document.getElementById('nameInput2').value = names['2'];
+  document.getElementById('u1name').textContent = names['1'];
+  document.getElementById('u2name').textContent = names['2'];
+  document.getElementById('articleDate').valueAsDate = new Date();
+  updateCounts();
+}
+
+// ── 설정 완료 ────────────────────────────────────
+async function completeSetup() {
+  const key = document.getElementById('setupApiKey').value.trim();
+  const db  = document.getElementById('setupDbId').value.trim().replace(/-/g, '');
+  if (!key || !db) { alert('API 키와 데이터베이스 ID를 모두 입력해주세요!'); return; }
+
+  NOTION_API_KEY = key;
+  NOTION_DB_ID   = db;
+
+  // 연결 테스트
+  try {
+    const res = await notionFetch('GET', `/databases/${NOTION_DB_ID}`);
+    if (!res.ok) {
+      const e = await res.json();
+      alert('연결 실패: ' + (e.message || res.status) + '\nAPI 키나 DB ID를 다시 확인해주세요.');
+      return;
+    }
+  } catch(e) {
+    alert('네트워크 오류가 발생했어요.\n인터넷 연결을 확인하거나, GitHub Pages에서 열어주세요.');
+    return;
+  }
+
+  // 성공 → localStorage에 저장
+  localStorage.setItem('notionApiKey', key);
+  localStorage.setItem('notionDbId', db);
+  document.getElementById('setupOverlay').style.display = 'none';
+  setStatus('ok', '노션 연결됨 ✓');
+  toast('노션 연결 성공 ♥');
+}
+
+// 설정 초기화 (로그아웃)
+function resetSetup() {
+  if (!confirm('API 키 설정을 초기화할까요?\n스크랩 데이터는 유지돼요.')) return;
+  localStorage.removeItem('notionApiKey');
+  localStorage.removeItem('notionDbId');
+  NOTION_API_KEY = '';
+  NOTION_DB_ID   = '';
+  document.getElementById('setupOverlay').style.display = 'flex';
+  document.getElementById('setupApiKey').value = '';
+  document.getElementById('setupDbId').value   = '';
+  setStatus('idle', 'API 키를 입력해주세요');
+}
+
+// ── 노션 API ─────────────────────────────────────
+async function notionFetch(method, path, body) {
+  const url  = PROXY + encodeURIComponent('https://api.notion.com/v1' + path);
+  const opts = {
+    method,
+    headers: {
+      'Authorization':  'Bearer ' + NOTION_API_KEY,
+      'Notion-Version': '2022-06-28',
+      'Content-Type':   'application/json'
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  return fetch(url, opts);
+}
+
+async function checkNotionConnection() {
+  setStatus('idle', '노션 연결 확인 중...');
+  try {
+    const res = await notionFetch('GET', `/databases/${NOTION_DB_ID}`);
+    if (res.ok) setStatus('ok', '노션 연결됨 ✓');
+    else { const e = await res.json(); setStatus('err', '연결 실패: ' + (e.message || res.status)); }
+  } catch(e) {
+    setStatus('err', '연결 오류 — 인터넷/GitHub Pages 확인');
+  }
+}
+
+function setStatus(type, msg) {
+  document.getElementById('statusDot').className = 'status-dot ' + type;
+  document.getElementById('statusText').textContent = msg;
+}
+
+// ── 노션에 저장 ──────────────────────────────────
+async function pushToNotion(item) {
+  const props = {
+    '헤드라인':      { title: [{ text: { content: item.headline || '' } }] },
+    '작성자':        { select: { name: item.userName || '알 수 없음' } },
+    '본문':          { rich_text: [{ text: { content: (item.body     ||'').slice(0,2000) } }] },
+    '수치화인사이트':{ rich_text: [{ text: { content: (item.insight  ||'').slice(0,2000) } }] },
+    '추가조사':      { rich_text: [{ text: { content: (item.research ||'').slice(0,2000) } }] },
+    '요약의견':      { rich_text: [{ text: { content: (item.opinion  ||'').slice(0,2000) } }] },
+    '적용점':        { rich_text: [{ text: { content: (item.apply    ||'').slice(0,2000) } }] },
+    '연관기사링크':  { rich_text: [{ text: { content: (item.related  ||'').slice(0,2000) } }] }
+  };
+  if (item.scrapDate)   props['스크랩날짜']   = { date: { start: item.scrapDate } };
+  if (item.articleDate) props['신문기사날짜']  = { date: { start: item.articleDate } };
+  if (item.articleLink) props['기사링크']      = { url: item.articleLink };
+
+  const res = await notionFetch('POST', '/pages', {
+    parent: { database_id: NOTION_DB_ID },
+    properties: props
+  });
+  if (!res.ok) { const e = await res.json(); throw new Error(e.message || '노션 저장 실패'); }
+  return (await res.json()).id;
+}
+
+// ── 노션에서 불러오기 ────────────────────────────
+async function loadFromNotion() {
+  if (!NOTION_API_KEY) { toast('먼저 API 키를 설정해주세요', true); return; }
+  setStatus('idle', '불러오는 중...');
+  try {
+    const res = await notionFetch('POST', `/databases/${NOTION_DB_ID}/query`, {
+      sorts: [{ property: '스크랩날짜', direction: 'descending' }],
+      page_size: 100
+    });
+    if (!res.ok) throw new Error('쿼리 실패');
+    const json = await res.json();
+    let added = 0;
+    json.results.forEach(page => {
+      if (data.find(d => d.notionId === page.id)) return;
+      const p = page.properties;
+      data.unshift({
+        id: Date.now() + Math.random(),
+        notionId: page.id, synced: true,
+        user: p['작성자']?.select?.name === names['2'] ? 2 : 1,
+        userName:    p['작성자']?.select?.name || names['1'],
+        scrapDate:   p['스크랩날짜']?.date?.start   || '',
+        articleDate: p['신문기사날짜']?.date?.start  || '',
+        headline:    p['헤드라인']?.title?.[0]?.text?.content || '',
+        articleLink: p['기사링크']?.url || '',
+        body:        p['본문']?.rich_text?.[0]?.text?.content || '',
+        insight:     p['수치화인사이트']?.rich_text?.[0]?.text?.content || '',
+        research:    p['추가조사']?.rich_text?.[0]?.text?.content || '',
+        opinion:     p['요약의견']?.rich_text?.[0]?.text?.content || '',
+        apply:       p['적용점']?.rich_text?.[0]?.text?.content || '',
+        related:     p['연관기사링크']?.rich_text?.[0]?.text?.content || ''
+      });
+      added++;
+    });
+    persist();
+    setStatus('ok', '노션 연결됨 ✓');
+    document.getElementById('syncCount').textContent = added > 0 ? `${added}개 새로 불러옴` : '최신 상태';
+    toast(added > 0 ? `노션에서 ${added}개 불러왔어요 ♥` : '이미 최신 상태예요');
+    if (document.getElementById('section-mine').style.display !== 'none') renderMine();
+    if (document.getElementById('section-all').style.display  !== 'none') renderAll();
+  } catch(e) {
+    setStatus('err', '불러오기 실패');
+    toast('불러오기 실패: ' + e.message, true);
+  }
+}
+
+// ── 미동기 일괄 전송 ─────────────────────────────
+async function syncUnsyncedToNotion() {
+  const q = data.filter(d => !d.synced);
+  if (!q.length) { toast('동기화할 항목이 없어요 ♥'); return; }
+  toast(`${q.length}개 전송 중...`);
+  let ok = 0;
+  for (const item of q) {
+    try { item.notionId = await pushToNotion(item); item.synced = true; ok++; } catch(e) {}
+  }
+  persist(); renderMine(); renderAll();
+  toast(`${ok}개 노션 전송 완료 ♥`);
+}
+
+// ── 저장 ─────────────────────────────────────────
+async function saveScrap() {
+  if (!currentUser) { toast('먼저 이름을 선택해주세요!', true); return; }
+  if (!document.getElementById('headline').value.trim()) { toast('헤드라인을 입력해주세요 ♥', true); return; }
+
+  const item = buildItem();
+  data.unshift(item); persist(); clearForm();
+
+  const btn = document.getElementById('saveBtn');
+  const sp  = document.getElementById('saveSpinner');
+  const tx  = document.getElementById('saveBtnText');
+  btn.disabled = true; sp.classList.add('show'); tx.textContent = '노션 전송 중...';
+
+  try {
+    item.notionId = await pushToNotion(item);
+    item.synced = true; persist();
+    toast(names[String(currentUser)] + '의 스크랩을 노션에 저장했어요 ♥');
+    setStatus('ok', '노션 연결됨 ✓');
+  } catch(e) {
+    toast('로컬 저장 완료 · 노션 전송 실패 (미동기 전송 가능)', true);
+    setStatus('err', '노션 전송 실패');
+  } finally {
+    btn.disabled = false; sp.classList.remove('show');
+    tx.textContent = '저장 + 노션 전송 ♥';
+    updateCounts();
+  }
+}
+
+function saveLocal() {
+  if (!currentUser) { toast('먼저 이름을 선택해주세요!', true); return; }
+  if (!document.getElementById('headline').value.trim()) { toast('헤드라인을 입력해주세요 ♥', true); return; }
+  data.unshift(buildItem()); persist(); clearForm();
+  toast('로컬에 저장했어요 (노션 미동기)');
+}
+
+function buildItem() {
+  return {
+    id: Date.now(), notionId: null, synced: false,
+    user: currentUser, userName: names[String(currentUser)],
+    scrapDate: new Date().toISOString().slice(0,10),
+    articleDate: document.getElementById('articleDate').value,
+    headline:    document.getElementById('headline').value.trim(),
+    articleLink: document.getElementById('articleLink').value.trim(),
+    body:        document.getElementById('body').value.trim(),
+    insight:     document.getElementById('insight').value.trim(),
+    research:    document.getElementById('research').value.trim(),
+    opinion:     document.getElementById('opinion').value.trim(),
+    apply:       document.getElementById('apply').value.trim(),
+    related:     document.getElementById('related').value.trim()
+  };
+}
+
+// ── 삭제 ─────────────────────────────────────────
+function del(id) {
+  if (!confirm('이 스크랩을 삭제할까요?')) return;
+  data = data.filter(d => d.id !== id); persist();
+  renderMine(); renderAll(); toast('삭제했어요');
+}
+
+// ── 유틸 ─────────────────────────────────────────
+function persist() { localStorage.setItem('scrapData4', JSON.stringify(data)); updateCounts(); }
+function clearForm() {
+  ['headline','articleLink','body','insight','research','opinion','apply','related'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('articleDate').valueAsDate = new Date();
+}
+function fmtDate(s) { if(!s)return'-'; const[y,m,d]=s.split('-'); return y+'.'+m+'.'+d; }
+function esc(s) { if(!s)return''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function userColor(u) { return u===1?'background:#FCE4EC;color:#C2185B;':'background:#F3E5F5;color:#7B1FA2;'; }
+function updateCounts() {
+  document.getElementById('u1count').textContent = data.filter(d=>d.user===1).length;
+  document.getElementById('u2count').textContent = data.filter(d=>d.user===2).length;
+}
+function saveNames() {
+  names['1'] = document.getElementById('nameInput1').value.trim() || '멤버 1';
+  names['2'] = document.getElementById('nameInput2').value.trim() || '멤버 2';
+  localStorage.setItem('scrapNames', JSON.stringify(names));
+  document.getElementById('u1name').textContent = names['1'];
+  document.getElementById('u2name').textContent = names['2'];
+  toast('이름 저장 완료 ♥'); updateCounts();
+}
+function setUser(n) {
+  currentUser = n;
+  document.getElementById('userBtn1').classList.toggle('active', n===1);
+  document.getElementById('userBtn2').classList.toggle('active', n===2);
+  document.getElementById('writeNotice').textContent = names[String(n)] + '으로 스크랩을 작성합니다 ♥';
+  document.getElementById('writeNotice').style.background = n===1 ? '#FFF0F5' : '#F3E5F5';
+  document.getElementById('writeNotice').style.color      = n===1 ? '#C2185B' : '#7B1FA2';
+}
+function switchTab(tab) {
+  ['write','mine','all'].forEach(t => {
+    document.getElementById('section-'+t).style.display = t===tab?'block':'none';
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+  });
+  if(tab==='mine') renderMine();
+  if(tab==='all')  renderAll();
+}
+function toggleExpand(id) {
+  const item = document.getElementById('item-'+id);
+  const det  = document.getElementById('detail-'+id);
+  det.style.display = item.classList.toggle('expanded') ? 'flex' : 'none';
+}
+function toast(msg, err) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = err ? '#D32F2F' : '#C2185B';
+  t.style.boxShadow  = '0 4px 16px rgba(0,0,0,0.2)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── 렌더링 ───────────────────────────────────────
+function buildItemHTML(s, idx, total) {
+  const links = s.related ? s.related.split('\n').filter(Boolean) : [];
+  return `
+    <div class="scrap-item" id="item-${s.id}" onclick="toggleExpand(${s.id})">
+      <div class="item-top">
+        <span class="item-no">No.${total-idx}</span>
+        <span class="item-headline">${esc(s.headline)}</span>
+        <div class="item-actions" onclick="event.stopPropagation()">
+          <button class="del-btn" onclick="del(${s.id})">✕</button>
+          <button class="expand-btn">▾</button>
+        </div>
+      </div>
+      <div class="item-meta">
+        <span class="item-user-tag" style="${userColor(s.user)}">${esc(s.userName)}</span>
+        ${s.synced ? '<span class="notion-synced">노션 ✓</span>' : '<span class="notion-unsynced">미동기</span>'}
+        <span>스크랩 ${fmtDate(s.scrapDate)}</span>
+        <span>기사 ${s.articleDate?fmtDate(s.articleDate):'-'}</span>
+        ${s.articleLink?`<a href="${esc(s.articleLink)}" target="_blank" onclick="event.stopPropagation()" style="color:#EC407A;font-size:11px;">기사 →</a>`:''}
+      </div>
+      <div class="item-detail" id="detail-${s.id}">
+        ${s.body     ?`<div class="detail-row"><span class="detail-tag">본문</span><span class="detail-val">${esc(s.body)}</span></div>`:''}
+        ${s.insight  ?`<div class="detail-row"><span class="detail-tag">인사이트</span><span class="detail-val">${esc(s.insight)}</span></div>`:''}
+        ${s.research ?`<div class="detail-row"><span class="detail-tag">추가조사</span><span class="detail-val">${esc(s.research)}</span></div>`:''}
+        ${s.opinion  ?`<div class="detail-row"><span class="detail-tag">요약/의견</span><span class="detail-val">${esc(s.opinion)}</span></div>`:''}
+        ${s.apply    ?`<div class="detail-row"><span class="detail-tag">적용점</span><span class="detail-val">${esc(s.apply)}</span></div>`:''}
+        ${links.length?`<div class="detail-row"><span class="detail-tag">연관기사</span><span class="detail-val">${links.map(u=>`<a href="${esc(u.trim())}" target="_blank">${esc(u.trim())}</a>`).join('<br/>')}</span></div>`:''}
+      </div>
+    </div>`;
+}
+
+function renderMine() {
+  const hd = document.getElementById('mineListHeader');
+  const el = document.getElementById('mineList');
+  if (!currentUser) { hd.innerHTML=''; el.innerHTML='<div class="empty-state">위에서 이름을 먼저 선택해주세요 ♥</div>'; return; }
+  const mine = data.filter(d => d.user===currentUser);
+  hd.innerHTML = `<div class="list-header"><div class="list-title">${esc(names[String(currentUser)])}의 스크랩</div><span class="count-badge">${mine.length}개</span></div>`;
+  el.innerHTML = mine.length ? mine.map((s,i)=>buildItemHTML(s,i,mine.length)).join('') : '<div class="empty-state">아직 작성한 스크랩이 없어요 ♥</div>';
+}
+
+function renderAll() {
+  document.getElementById('sharedBar').textContent =
+    `${names['1']} ${data.filter(d=>d.user===1).length}개 · ${names['2']} ${data.filter(d=>d.user===2).length}개 · 합계 ${data.length}개`;
+  document.getElementById('allList').innerHTML = data.length
+    ? data.map((s,i)=>buildItemHTML(s,i,data.length)).join('')
+    : '<div class="empty-state">아직 저장된 스크랩이 없어요 ♥</div>';
+}
+
+function exportCSV(mode) {
+  const rows = mode==='mine' ? data.filter(d=>d.user===currentUser) : data;
+  if (!rows.length) { toast('저장된 스크랩이 없어요'); return; }
+  const cols = ['No','작성자','스크랩날짜','신문기사날짜','헤드라인','기사링크','본문','수치화인사이트','추가조사','요약의견','적용점','연관기사링크','노션동기화'];
+  const bom  = '\uFEFF';
+  const csv  = bom + [cols, ...rows.map((s,i)=>[
+    rows.length-i, s.userName, s.scrapDate, s.articleDate||'', s.headline,
+    s.articleLink||'', s.body||'', s.insight||'', s.research||'',
+    s.opinion||'', s.apply||'', s.related||'', s.synced?'O':'X'
+  ])].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = `경제신문스크랩_${mode==='mine'?(names[String(currentUser)]||'내'):'전체'}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); toast('CSV 다운로드 완료 ♥');
+}
+
+init();
+</script>
+</body>
+</html>
