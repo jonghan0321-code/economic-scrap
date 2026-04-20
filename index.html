@@ -239,7 +239,7 @@ textarea{min-height:68px;}
 
     <div class="setup-warn">
       <strong>보안 안내:</strong> API 키는 이 기기의 브라우저에만 저장돼요.<br>
-      공용 PC에서는 사용 후 아래 "설정 초기화" 버튼으로 삭제하세요.<br>
+      공용 PC에서는 사용 후 아래 "id="resetBtn" style="display:none"" 버튼으로 삭제하세요.<br>
       노션 Integration에서 언제든지 키를 재발급할 수 있어요.
     </div>
   </div>
@@ -274,15 +274,15 @@ textarea{min-height:68px;}
   <div class="notion-bar">
     <div class="notion-status">
       <div class="status-dot idle" id="statusDot"></div>
-      <span id="statusText">노션 연결 확인 중...</span>
+      <span id="statusText">구글 시트 연결 확인 중...</span>
     </div>
     <div class="notion-right">
       <span style="font-size:11px;color:var(--pink-400);" id="syncCount"></span>
       <button class="small-btn" onclick="loadFromNotion()">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v2M6 9v2M1 6h2M9 6h2" stroke="#C2185B" stroke-width="1.4" stroke-linecap="round"/></svg>
-        노션에서 불러오기
+        시트에서 불러오기
       </button>
-      <button class="small-btn" onclick="resetSetup()" style="color:#F44336;border-color:#FFCDD2;">설정 초기화</button>
+      <button class="small-btn" onclick="resetSetup()" style="color:#F44336;border-color:#FFCDD2;">id="resetBtn" style="display:none"</button>
     </div>
   </div>
 
@@ -366,7 +366,7 @@ textarea{min-height:68px;}
       <button class="btn-ghost" onclick="clearForm()">초기화</button>
       <button class="btn-sec" onclick="saveLocal()">로컬만 저장</button>
       <button class="btn-save" id="saveBtn" onclick="saveScrap()">
-        <span id="saveBtnText">저장 + 노션 전송 ♥</span>
+        <span id="saveBtnText">저장 + 시트 전송 ♥</span>
         <div class="spinner" id="saveSpinner"></div>
       </button>
     </div>
@@ -396,130 +396,33 @@ textarea{min-height:68px;}
 <div class="toast" id="toast"></div>
 
 <script>
-// ── 상태 ────────────────────────────────────────
-let NOTION_API_KEY = '';
-let NOTION_DB_ID   = '';
-const PROXIES = [
-  'https://corsproxy.io/?',
-  'https://api.allorigins.win/raw?url=',
-  'https://thingproxy.freeboard.io/fetch/'
-];
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz74e64O1uwg2PZjxFrEdVK-84o3_AYZGHlCFRvM3Js3ox6va6LNbBCFWJmAAMyRD_j/exec';
 
 let currentUser = 0;
 let names = JSON.parse(localStorage.getItem('scrapNames') || '{"1":"멤버 1","2":"멤버 2"}');
-let data  = JSON.parse(localStorage.getItem('scrapData4') || '[]');
+let data  = JSON.parse(localStorage.getItem('scrapData5') || '[]');
 
 // ── 초기화 ──────────────────────────────────────
 function init() {
-  const savedKey = localStorage.getItem('notionApiKey');
-  const savedDb  = localStorage.getItem('notionDbId');
-
-  if (savedKey && savedDb) {
-    NOTION_API_KEY = savedKey;
-    NOTION_DB_ID   = savedDb;
-    document.getElementById('setupOverlay').style.display = 'none';
-    checkNotionConnection();
-  } else {
-    // 미설정 상태 — overlay 표시
-    setStatus('idle', 'API 키를 입력해주세요');
-  }
-
+  document.getElementById('setupOverlay').style.display = 'none';
   document.getElementById('nameInput1').value = names['1'];
   document.getElementById('nameInput2').value = names['2'];
   document.getElementById('u1name').textContent = names['1'];
   document.getElementById('u2name').textContent = names['2'];
   document.getElementById('articleDate').valueAsDate = new Date();
   updateCounts();
+  checkConnection();
 }
 
-// ── 설정 완료 ────────────────────────────────────
-async function completeSetup() {
-  const key = document.getElementById('setupApiKey').value.trim();
-  const db  = document.getElementById('setupDbId').value.trim().replace(/-/g, '');
-  if (!key || !db) { alert('API 키와 데이터베이스 ID를 모두 입력해주세요!'); return; }
-
-  NOTION_API_KEY = key;
-  NOTION_DB_ID   = db;
-
-  // 연결 테스트
+async function checkConnection() {
+  setStatus('idle', '구글 시트 연결 확인 중...');
   try {
-    const res = await notionFetch('GET', `/databases/${NOTION_DB_ID}`);
-    if (!res.ok) {
-      const e = await res.json();
-      alert('연결 실패: ' + (e.message || res.status) + '\nAPI 키나 DB ID를 다시 확인해주세요.');
-      return;
-    }
+    const res = await fetch(GAS_URL);
+    const json = await res.json();
+    if (json.rows !== undefined) setStatus('ok', '구글 시트 연결됨 ✓');
+    else setStatus('err', '연결 실패');
   } catch(e) {
-    alert('네트워크 오류가 발생했어요.\n인터넷 연결을 확인하거나, GitHub Pages에서 열어주세요.');
-    return;
-  }
-
-  // 성공 → localStorage에 저장
-  localStorage.setItem('notionApiKey', key);
-  localStorage.setItem('notionDbId', db);
-  document.getElementById('setupOverlay').style.display = 'none';
-  setStatus('ok', '노션 연결됨 ✓');
-  toast('노션 연결 성공 ♥');
-}
-
-// 설정 초기화 (로그아웃)
-function resetSetup() {
-  if (!confirm('API 키 설정을 초기화할까요?\n스크랩 데이터는 유지돼요.')) return;
-  localStorage.removeItem('notionApiKey');
-  localStorage.removeItem('notionDbId');
-  NOTION_API_KEY = '';
-  NOTION_DB_ID   = '';
-  document.getElementById('setupOverlay').style.display = 'flex';
-  document.getElementById('setupApiKey').value = '';
-  document.getElementById('setupDbId').value   = '';
-  setStatus('idle', 'API 키를 입력해주세요');
-}
-
-// ── 노션 API ─────────────────────────────────────
-async function notionFetch(method, path, body) {
-  const notionUrl = 'https://api.notion.com/v1' + path;
-  const opts = {
-    method,
-    headers: {
-      'Authorization':  'Bearer ' + NOTION_API_KEY,
-      'Notion-Version': '2022-06-28',
-      'Content-Type':   'application/json'
-    }
-  };
-  if (body) opts.body = JSON.stringify(body);
-
-  // 프록시 3개를 순서대로 시도
-  let lastErr;
-  for (const proxy of PROXIES) {
-    try {
-      const res = await fetch(proxy + encodeURIComponent(notionUrl), opts);
-      // allorigins는 항상 200을 반환하므로 본문 파싱 필요
-      if (proxy.includes('allorigins')) {
-        const text = await res.text();
-        const parsed = JSON.parse(text);
-        // 노션 에러 응답이면 status 설정
-        return new Response(JSON.stringify(parsed), {
-          status: parsed.status || 200,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-      return res;
-    } catch(e) {
-      lastErr = e;
-      // 다음 프록시 시도
-    }
-  }
-  throw lastErr;
-}
-
-async function checkNotionConnection() {
-  setStatus('idle', '노션 연결 확인 중...');
-  try {
-    const res = await notionFetch('GET', `/databases/${NOTION_DB_ID}`);
-    if (res.ok) setStatus('ok', '노션 연결됨 ✓');
-    else { const e = await res.json(); setStatus('err', '연결 실패: ' + (e.message || res.status)); }
-  } catch(e) {
-    setStatus('err', '연결 오류 — 인터넷/GitHub Pages 확인');
+    setStatus('err', '연결 오류');
   }
 }
 
@@ -528,67 +431,49 @@ function setStatus(type, msg) {
   document.getElementById('statusText').textContent = msg;
 }
 
-// ── 노션에 저장 ──────────────────────────────────
-async function pushToNotion(item) {
-  const props = {
-    '헤드라인':      { title: [{ text: { content: item.headline || '' } }] },
-    '작성자':        { select: { name: item.userName || '알 수 없음' } },
-    '본문':          { rich_text: [{ text: { content: (item.body     ||'').slice(0,2000) } }] },
-    '수치화인사이트':{ rich_text: [{ text: { content: (item.insight  ||'').slice(0,2000) } }] },
-    '추가조사':      { rich_text: [{ text: { content: (item.research ||'').slice(0,2000) } }] },
-    '요약의견':      { rich_text: [{ text: { content: (item.opinion  ||'').slice(0,2000) } }] },
-    '적용점':        { rich_text: [{ text: { content: (item.apply    ||'').slice(0,2000) } }] },
-    '연관기사링크':  { rich_text: [{ text: { content: (item.related  ||'').slice(0,2000) } }] }
-  };
-  if (item.scrapDate)   props['스크랩날짜']   = { date: { start: item.scrapDate } };
-  if (item.articleDate) props['신문기사날짜']  = { date: { start: item.articleDate } };
-  if (item.articleLink) props['기사링크']      = { url: item.articleLink };
-
-  const res = await notionFetch('POST', '/pages', {
-    parent: { database_id: NOTION_DB_ID },
-    properties: props
+// ── 구글 시트에 저장 ─────────────────────────────
+async function pushToSheet(item) {
+  const res = await fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify(item)
   });
-  if (!res.ok) { const e = await res.json(); throw new Error(e.message || '노션 저장 실패'); }
-  return (await res.json()).id;
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || '저장 실패');
 }
 
-// ── 노션에서 불러오기 ────────────────────────────
-async function loadFromNotion() {
-  if (!NOTION_API_KEY) { toast('먼저 API 키를 설정해주세요', true); return; }
+// ── 구글 시트에서 불러오기 ───────────────────────
+async function loadFromSheet() {
   setStatus('idle', '불러오는 중...');
   try {
-    const res = await notionFetch('POST', `/databases/${NOTION_DB_ID}/query`, {
-      sorts: [{ property: '스크랩날짜', direction: 'descending' }],
-      page_size: 100
-    });
-    if (!res.ok) throw new Error('쿼리 실패');
+    const res  = await fetch(GAS_URL);
     const json = await res.json();
-    let added = 0;
-    json.results.forEach(page => {
-      if (data.find(d => d.notionId === page.id)) return;
-      const p = page.properties;
+    let added  = 0;
+    (json.rows || []).reverse().forEach(row => {
+      const key = row['스크랩날짜'] + '_' + row['헤드라인'] + '_' + row['작성자'];
+      if (data.find(d => d.sheetKey === key)) return;
       data.unshift({
-        id: Date.now() + Math.random(),
-        notionId: page.id, synced: true,
-        user: p['작성자']?.select?.name === names['2'] ? 2 : 1,
-        userName:    p['작성자']?.select?.name || names['1'],
-        scrapDate:   p['스크랩날짜']?.date?.start   || '',
-        articleDate: p['신문기사날짜']?.date?.start  || '',
-        headline:    p['헤드라인']?.title?.[0]?.text?.content || '',
-        articleLink: p['기사링크']?.url || '',
-        body:        p['본문']?.rich_text?.[0]?.text?.content || '',
-        insight:     p['수치화인사이트']?.rich_text?.[0]?.text?.content || '',
-        research:    p['추가조사']?.rich_text?.[0]?.text?.content || '',
-        opinion:     p['요약의견']?.rich_text?.[0]?.text?.content || '',
-        apply:       p['적용점']?.rich_text?.[0]?.text?.content || '',
-        related:     p['연관기사링크']?.rich_text?.[0]?.text?.content || ''
+        id:          Date.now() + Math.random(),
+        sheetKey:    key,
+        synced:      true,
+        user:        row['작성자'] === names['2'] ? 2 : 1,
+        userName:    row['작성자']    || '',
+        scrapDate:   row['스크랩날짜']   || '',
+        articleDate: row['신문기사날짜'] || '',
+        headline:    row['헤드라인']  || '',
+        articleLink: row['기사링크']  || '',
+        body:        row['본문']      || '',
+        insight:     row['수치화인사이트'] || '',
+        research:    row['추가조사']  || '',
+        opinion:     row['요약의견']  || '',
+        apply:       row['적용점']    || '',
+        related:     row['연관기사링크'] || ''
       });
       added++;
     });
     persist();
-    setStatus('ok', '노션 연결됨 ✓');
+    setStatus('ok', '구글 시트 연결됨 ✓');
     document.getElementById('syncCount').textContent = added > 0 ? `${added}개 새로 불러옴` : '최신 상태';
-    toast(added > 0 ? `노션에서 ${added}개 불러왔어요 ♥` : '이미 최신 상태예요');
+    toast(added > 0 ? `${added}개 불러왔어요 ♥` : '이미 최신 상태예요');
     if (document.getElementById('section-mine').style.display !== 'none') renderMine();
     if (document.getElementById('section-all').style.display  !== 'none') renderAll();
   } catch(e) {
@@ -604,10 +489,10 @@ async function syncUnsyncedToNotion() {
   toast(`${q.length}개 전송 중...`);
   let ok = 0;
   for (const item of q) {
-    try { item.notionId = await pushToNotion(item); item.synced = true; ok++; } catch(e) {}
+    try { await pushToSheet(item); item.synced = true; ok++; } catch(e) {}
   }
   persist(); renderMine(); renderAll();
-  toast(`${ok}개 노션 전송 완료 ♥`);
+  toast(`${ok}개 구글 시트 전송 완료 ♥`);
 }
 
 // ── 저장 ─────────────────────────────────────────
@@ -621,19 +506,22 @@ async function saveScrap() {
   const btn = document.getElementById('saveBtn');
   const sp  = document.getElementById('saveSpinner');
   const tx  = document.getElementById('saveBtnText');
-  btn.disabled = true; sp.classList.add('show'); tx.textContent = '노션 전송 중...';
+  btn.disabled = true; sp.classList.add('show'); tx.textContent = '구글 시트 전송 중...';
 
   try {
-    item.notionId = await pushToNotion(item);
-    item.synced = true; persist();
-    toast(names[String(currentUser)] + '의 스크랩을 노션에 저장했어요 ♥');
-    setStatus('ok', '노션 연결됨 ✓');
+    await pushToSheet(item);
+    item.synced = true;
+    const key = item.scrapDate + '_' + item.headline + '_' + item.userName;
+    item.sheetKey = key;
+    persist();
+    toast(names[String(currentUser)] + '의 스크랩을 구글 시트에 저장했어요 ♥');
+    setStatus('ok', '구글 시트 연결됨 ✓');
   } catch(e) {
-    toast('로컬 저장 완료 · 노션 전송 실패 (미동기 전송 가능)', true);
-    setStatus('err', '노션 전송 실패');
+    toast('로컬 저장 완료 · 시트 전송 실패 (미동기 전송 가능)', true);
+    setStatus('err', '시트 전송 실패');
   } finally {
     btn.disabled = false; sp.classList.remove('show');
-    tx.textContent = '저장 + 노션 전송 ♥';
+    tx.textContent = '저장 + 시트 전송 ♥';
     updateCounts();
   }
 }
@@ -642,14 +530,14 @@ function saveLocal() {
   if (!currentUser) { toast('먼저 이름을 선택해주세요!', true); return; }
   if (!document.getElementById('headline').value.trim()) { toast('헤드라인을 입력해주세요 ♥', true); return; }
   data.unshift(buildItem()); persist(); clearForm();
-  toast('로컬에 저장했어요 (노션 미동기)');
+  toast('로컬에 저장했어요 (시트 미동기)');
 }
 
 function buildItem() {
   return {
-    id: Date.now(), notionId: null, synced: false,
+    id: Date.now(), sheetKey: null, synced: false,
     user: currentUser, userName: names[String(currentUser)],
-    scrapDate: new Date().toISOString().slice(0,10),
+    scrapDate:   new Date().toISOString().slice(0,10),
     articleDate: document.getElementById('articleDate').value,
     headline:    document.getElementById('headline').value.trim(),
     articleLink: document.getElementById('articleLink').value.trim(),
@@ -670,7 +558,7 @@ function del(id) {
 }
 
 // ── 유틸 ─────────────────────────────────────────
-function persist() { localStorage.setItem('scrapData4', JSON.stringify(data)); updateCounts(); }
+function persist() { localStorage.setItem('scrapData5', JSON.stringify(data)); updateCounts(); }
 function clearForm() {
   ['headline','articleLink','body','insight','research','opinion','apply','related'].forEach(id => document.getElementById(id).value='');
   document.getElementById('articleDate').valueAsDate = new Date();
@@ -735,7 +623,7 @@ function buildItemHTML(s, idx, total) {
       </div>
       <div class="item-meta">
         <span class="item-user-tag" style="${userColor(s.user)}">${esc(s.userName)}</span>
-        ${s.synced ? '<span class="notion-synced">노션 ✓</span>' : '<span class="notion-unsynced">미동기</span>'}
+        ${s.synced ? '<span class="notion-synced">시트 ✓</span>' : '<span class="notion-unsynced">미동기</span>'}
         <span>스크랩 ${fmtDate(s.scrapDate)}</span>
         <span>기사 ${s.articleDate?fmtDate(s.articleDate):'-'}</span>
         ${s.articleLink?`<a href="${esc(s.articleLink)}" target="_blank" onclick="event.stopPropagation()" style="color:#EC407A;font-size:11px;">기사 →</a>`:''}
@@ -771,7 +659,7 @@ function renderAll() {
 function exportCSV(mode) {
   const rows = mode==='mine' ? data.filter(d=>d.user===currentUser) : data;
   if (!rows.length) { toast('저장된 스크랩이 없어요'); return; }
-  const cols = ['No','작성자','스크랩날짜','신문기사날짜','헤드라인','기사링크','본문','수치화인사이트','추가조사','요약의견','적용점','연관기사링크','노션동기화'];
+  const cols = ['No','작성자','스크랩날짜','신문기사날짜','헤드라인','기사링크','본문','수치화인사이트','추가조사','요약의견','적용점','연관기사링크','시트동기화'];
   const bom  = '\uFEFF';
   const csv  = bom + [cols, ...rows.map((s,i)=>[
     rows.length-i, s.userName, s.scrapDate, s.articleDate||'', s.headline,
